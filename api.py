@@ -1,15 +1,15 @@
-# ==========================================
-# 3. Downloading real past dataset(ERA5 Observations)
-# ==========================================
 import cdsapi
 
-client = cdsapi.Client()
+client = cdsapi.Client(
+    url="https://cds.climate.copernicus.eu/api",
+    key="323a3042-fb70-4fab-8a16-0d945049d9bd"
+)
 
-print("Starting download 3: ERA5 Observations (Ground Truth)...")
+print("Starting download 3: ERA5 Monthly Observations (Ground Truth)...")
 client.retrieve(
-    "reanalysis-era5-single-levels",
+    "reanalysis-era5-single-levels-monthly-means",  # <--- تغییر حیاتی: دیتای ماهانه
     {
-        "product_type": ["reanalysis"],
+        "product_type": "monthly_averaged_reanalysis", # <--- تغییر حیاتی
         "variable": [
             "2m_temperature",
             "total_precipitation"
@@ -24,21 +24,12 @@ client.retrieve(
             "01", "02", "03", "04", "05", "06",
             "07", "08", "09", "10", "11", "12"
         ],
-        "day": [
-            "01", "02", "03", "04", "05", "06", "07", "08", "09", 
-            "10", "11", "12", "13", "14", "15", "16", "17", "18", 
-            "19", "20", "21", "22", "23", "24", "25", "26", "27", 
-            "28", "29", "30", "31"
-        ],
-        "time": [
-            "06:00", "07:00", "08:00", "09:00", "10:00", "12:00",
-            "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
-        ],
+        "time": "00:00", # در دیتای ماهانه فقط همین یک زمان کافیست
         "data_format": "netcdf",
         "download_format": "unarchived",
         "area": [45, -80, 40, -71]        
     },
-    "era5_observations_ny.nc"            
+    "era5_monthly_observations_ny.nc"            
 )
 
-print("All datasets (Historical, Future, and ERA5) successfully downloaded!")
+print("Download completed successfully!")

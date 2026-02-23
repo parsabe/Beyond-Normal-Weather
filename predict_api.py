@@ -1,11 +1,9 @@
 import cdsapi
 
-# اتصال به سرور (فقط یک بار نیاز است)
-client = cdsapi.Client()
-
-# ==========================================
-# 1. دانلود دیتای گذشته (Historical Temperature)
-# ==========================================
+client = cdsapi.Client(
+    url="https://cds.climate.copernicus.eu/api",
+    key="323a3042-fb70-4fab-8a16-0d945049d9bd"
+)
 print("Starting download 1: Historical Temperature (GFDL-ESM4)...")
 client.retrieve(
     "projections-cmip6",
