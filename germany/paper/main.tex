@@ -1,104 +1,95 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
+
 \usepackage[T1]{fontenc}
 \usepackage[sc]{mathpazo}
-\usepackage[margin=19mm]{geometry}
+\usepackage[scale=0.92]{tgheros}
+\usepackage[margin=19mm,footskip=10mm]{geometry}
 \usepackage{microtype,amsmath,amssymb,amsthm,graphicx,booktabs}
 \usepackage{algorithm,algpseudocode}
-\usepackage{xcolor}
+\usepackage{xcolor,titlesec,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[round,sort]{natbib}
+\definecolor{Ink}{HTML}{20333A}
 \definecolor{ProjectBlue}{HTML}{174F91}
-\usepackage[colorlinks=true,allcolors=ProjectBlue,
-  pdftitle={Seven-Day AI Forecasts for German Hydrogen Reserve Operations},
-  pdfauthor={Parsa Besharat}]{hyperref}
+\definecolor{CitationGreen}{HTML}{14675A}
+\usepackage[colorlinks=true,urlcolor=ProjectBlue,linkcolor=Ink,citecolor=CitationGreen,
+  pdftitle={AI for Renewable Hydrogen Supply in Germany},
+  pdfauthor={Parsa Besharat},
+  pdfsubject={A seven-day forecast and reserve-planning backtest for Germany}]{hyperref}
+
 \setlength{\columnsep}{7mm}
-\setlength{\emergencystretch}{1em}
+\setlength{\tabcolsep}{4.5pt}
+\setlength{\emergencystretch}{1.25em}
+\setlength{\bibsep}{4pt}
+\widowpenalty=10000
+\clubpenalty=10000
 \raggedbottom
-\newcommand{\repo}{\href{https://github.com/parsabe/Beyond-Normal-Weather/tree/germany-ai-operations/germany}{Germany pipeline repository}}
-\title{Seven-Day AI Forecasts for German Hydrogen Reserve Operations}
-\author{Parsa Besharat\\\normalsize\href{mailto:parsa@parsabe.com}{\texttt{parsa@parsabe.com}}}
+\titleformat{\section}{\large\sffamily\bfseries\color{Ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\sffamily\bfseries\color{Ink}}{\thesubsection}{0.55em}{}
+\newtheorem{proposition}{Proposition}[section]
+\newcommand{\GitHubURL}{https://github.com/parsabe/Beyond-Normal-Weather}
+\newcommand{\studyrepo}{\href{\GitHubURL/tree/germany-ai-operations/germany}{Germany pipeline}}
+\newcommand{\studydata}{\href{\GitHubURL/tree/germany-ai-operations/germany/report}{backtest results}}
+\newcommand{\CRPS}{\operatorname{CRPS}}
+\newcommand{\clip}{\operatorname{clip}}
+\providecommand{\doi}[1]{\href{https://doi.org/#1}{\nolinkurl{#1}}}
+
+\title{\bfseries\color{Ink} AI for Renewable Hydrogen Supply in Germany\\[3pt]
+  \large\normalfont Seven-day forecasts and industrial reserve decisions during renewable shortages}
+\author{Parsa Besharat\\[-1pt]\normalsize\href{mailto:parsa@parsabe.com}{\texttt{parsa@parsabe.com}}}
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Reliable industrial hydrogen delivery depends on how operators respond to multi-day wind and solar shortages. This pilot forecasts daily renewable generation across Germany's four electricity control areas using a neural network trained on historical generation and archived weather forecasts. It compares standard training and training that gives greater weight to windows of low modeled hydrogen supply. Each forecast is expanded into eight correlated weekly scenarios and passed to a rolling linear optimizer that recommends regional reserve targets and backup import orders. The evaluation replays 359 historical decision days and compares the policies with linear forecasting, persistence, and a fixed reserve rule. Ridge regression gave the lowest forecast error. During a modeled import interruption, the reserve-weighted neural policy improved on the ordinary neural policy, while the fixed reserve rule missed the fewest deliveries. The \repo\ contains the configuration, code, and results for the illustrative supply system.
+Germany's experience with disruptions to natural-gas supply has increased the importance of diversified industrial energy and feedstock supply. Renewable hydrogen can contribute to that goal where electricity is used to produce hydrogen for industrial customers, but a wind and solar drought can leave scheduled deliveries exposed. This paper studies one operational use of artificial intelligence. A neural network uses historical generation and archived weather forecasts to predict the next seven days of wind and solar generation across Germany's four electricity control areas. Its training gives more weight to weeks with weak modeled hydrogen production potential. The forecasts feed a rolling optimization that recommends regional reserves and orders for backup hydrogen while accounting for electrolyzer output, contracted demand, tank capacities, and interregional transfers. The experiment uses public German generation data and an illustrative four-zone hydrogen portfolio. Across 359 held-out days, a ridge forecast had the lowest national generation error, and a fixed reserve rule missed the least hydrogen during a simulated backup import interruption. Weak-supply weighting reduced unmet demand from 0.800\% to 0.704\% relative to the unweighted neural comparison. The fixed rule and the ridge policy achieved 0.143\% and 0.300\%, respectively. In the focal policy's worst week, a low reserve entering the shortfall was associated with missed deliveries in all four zones. The evidence identifies where AI may inform hydrogen operations and why a reserve policy must be judged on deliveries as well as forecast accuracy. The \href{\GitHubURL}{GitHub repository} hosts the \studyrepo\ and \studydata.
 \end{abstract}
 
 \section{Introduction}
-Germany's hydrogen strategy identifies diversification of energy imports and security of supply as priorities \cite{strategy}. For operators with renewable power contracts, backup supply and stored hydrogen offer flexibility when wind and solar generation fall. Reserve decisions depend on how long shortages are expected to last and whether several regions are exposed at once. Germany's four control areas provide a useful geographic division for studying this question with public generation data. This pilot asks whether a neural estimate of next-week renewable supply helps an illustrative four-zone portfolio decide how much hydrogen to reserve and which zones need backup orders. Its criterion is delivery performance under the same physical and contractual assumptions across all forecasting methods.
+Russia's full-scale invasion of Ukraine and the subsequent disruption to gas trade exposed Germany's reliance on concentrated energy imports. Germany's review of its energy transition gives diversification, renewable generation, and industrial decarbonisation complementary roles in the response \citep{iea2025,roadmap2024}. Hydrogen is relevant to parts of that transition because it can be produced with renewable electricity, stored, transported, and used as an industrial feedstock or reducing agent. Existing chemical demand and prospective steel applications illustrate why continuity of delivery matters \citep{strategy,imports2024}. A factory using hydrogen needs the molecule at the point of use when it is due. When a domestic electrolyzer draws on wind and solar generation, production can fall for several days. A local reserve may bridge the gap, another region may have spare hydrogen and a connection through which to send it, and backup supply may be booked if it is available. These options pose an operational decision under uncertainty that is different from a national energy balance. A useful forecast has to indicate when a shortage could start, how long it could persist, and which regions could be affected together. The operator must then decide how much stock to protect and where to arrange backup before the shortage unfolds. This paper asks whether a single forecast-and-optimization workflow can use artificial intelligence to improve those decisions. The neural component predicts a week of regional wind and solar generation and is trained with extra emphasis on weak-supply windows. A mathematical dispatch layer decides how to translate those forecasts into reserve targets and backup orders under mass balance, production, and transport limits. We evaluate that workflow using actual German generation records, an illustrative hydrogen system, and a historical replay in which future realized generation is withheld from the advance booking decision. A fixed reserve rule, persistence, and a linear forecast supply comparators with distinct operating behavior. A controlled ablation isolates the effect of upweighting weak-supply windows. The central comparison concerns unmet hydrogen delivery during a modeled interruption of backup imports, with the normal-access case showing the trade-off between delivery reliability and operating expenditure.
 
 \section{Related Work}
-Research on German \emph{Dunkelflauten} connects multi-day low renewable generation to winter weather regimes \cite{mockert}. Probabilistic renewable forecasts have also been used for stochastic control of wind--solar hydrogen systems \cite{mpc}. The question here is whether joint regional forecasts and greater training weight on low-supply windows help reserve decisions under a common optimizer and independently held-out historical data. Delivery and cost estimates are specific to the tested configuration.
+\subsection{Hydrogen and energy security in Germany}
+The updated German National Hydrogen Strategy and its import strategy discuss domestic production alongside procurement from a diversified set of suppliers \citep{strategy,imports2024}. A joint German--Norwegian roadmap connects this diversification agenda to the vulnerabilities exposed by Russia's war against Ukraine \citep{roadmap2024}. Renewable hydrogen production can use domestic renewable electricity. Combining it with storage and a diversified set of supply contracts can make delivery more flexible, while the electricity required for electrolysis and the cost of hydrogen production remain important. Germany's energy policy review treats efficiency, electrification, network operation, and hydrogen as parts of a wider transition \citep{iea2025}. The operational question in this study concerns selected industrial hydrogen delivery commitments and holds their size constant.
 
-\section{Methodology}
-\subsection{Learning regional renewable trajectories}
-The target is a seven-day matrix of observed wind and solar generation in 50Hertz, Amprion, TenneT, and TransnetBW. SMARD supplies daily generation \cite{smard}. Predictors include recent generation up to two days before issue, seasonal terms, and archived ECMWF wind speed and solar radiation from Open-Meteo at two points per zone \cite{meteo}. The weather features use the appropriate preceding-day offset for each target date and retain local valid hours through 18:00. This creates a time buffer relative to the decision hour. The archive provides lead offsets rather than an exact release timestamp for every value.
+In October 2024 the Bundesnetzagentur approved plans covering 9{,}040 km of hydrogen core-network pipelines. The approval identifies infrastructure intended to connect major demand and production locations, storage, and import corridors \citep{core2024}. These plans motivate representing transfer limits and differentiated regional demand. The present four-zone graph uses electricity control areas to match public generation records and assigns illustrative hydrogen transfer capacities. The results accordingly describe a hypothetical industrial portfolio with Germany-wide renewable inputs. Tables in the appendix list the assumed connections and capacities.
 
-A fully connected neural network with hidden layers of 64 and 32 units predicts the entire matrix. One fit uses squared error, and a second triples the sample weight of the weakest fifth of training windows. Weak supply is defined as the lowest three-day mean of national modeled hydrogen production potential within a week. A ridge model uses identical inputs. Persistence repeats the latest generation available to the forecaster. Forecasts are clipped at zero. Whole residual trajectories from the calibration interval are sampled according to season and expected renewable supply. Adding a whole trajectory preserves cross-zone and cross-day errors within each draw.
+\subsection{Weather droughts and regional balancing}
+\citet{mockert2023} identify persistent weather regimes associated with periods of low wind and solar output in Germany, with many events occurring in the colder part of the year. \citet{kittel2026} show that prolonged renewable droughts can shape long-duration storage requirements in European electricity-system models and interact with geographical balancing. \citet{strnad2026} use generative deep learning to downscale climate simulations and study how future German \emph{Dunkelflaute} risk may evolve. These studies establish why persistence and simultaneous regional exposure matter. The seven-day horizon here addresses an operational question conditional on archived short-range forecasts. The study assesses hydrogen delivery shortfalls using actual generation during the replay instead of counting low-wind events as delivery failures.
 
-\subsection{Reserve and import decisions}
-For zone $z$, day $t$, and forecast scenario $s$, the dispatch model balances storage according to
-\begin{equation}
-\label{eq:balance}
-S_{s,t,z}=S_{s,t-1,z}+P_{s,t,z}+I_{s,t,z}
-+F^{\mathrm{net}}_{s,t,z}-D_z+U_{s,t,z}.
-\end{equation}
-Here $P$ is local production, $I$ is backup hydrogen, $D$ is contracted demand, $U$ is unmet demand, and $F^{\mathrm{net}}$ is incoming minus outgoing transfer. Production, inventories, imports, and transfers have upper limits. Today's import orders are shared across scenarios. The objective combines expected operating costs, unmet demand penalties, a penalty for falling below the terminal stock target, and conditional value at risk of cumulative shortage. With eight equal paths and a 90\% tail level, that last term emphasizes the worst sampled shortage. The end-of-day reserve recommendation is the scenario average of planned stocks. For evaluated operations, day-ahead orders are fixed and a daily recourse calculation uses realized generation.
+\subsection{AI forecasts and hydrogen operations}
+Probabilistic wind and solar forecasts have been applied to stochastic control of coupled renewable and hydrogen plants. \citet{zhao2026} combine forecasts with control for alkaline electrolyzer operation under variable renewable output. The present design uses a different operational target, continuity of industrial hydrogen delivery across a regional supply-and-storage portfolio, and gives weak modeled production potential a direct role in training weights. It also tests whether improvements in forecast scores translate to plant-level outcomes using a common dispatch model and a simple, physically interpretable reserve rule. The comparisons ask whether the neural method adds value for the stated decision and document the circumstances in which a conservative rule performed better.
 
-\begin{algorithm}[t]
-\caption{Rolling reserve recommendation and replay}
-\small
-\begin{algorithmic}[1]
-\State Train the renewable models on the training interval.
-\State Save calibration errors as full weekly trajectories.
-\For{each held-out issue day}
-  \State Predict seven days of generation by zone and type.
-  \State Draw eight scenarios from comparable weekly errors.
-  \State Solve for today's shared orders and stock targets.
-  \State Fix orders and replay dispatch at realized supply.
-  \State Carry closing reserves into the following day.
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-\section{Experiments}
-The study trains in April--December 2024, calibrates in January--September 2025, and evaluates 359 daily issues from 1 October 2025 to 24 September 2026. Each seven-day window ends within its split. Daily winds and solar observations cover Germany's four control areas. Capacities, costs, contracted renewable shares, and hydrogen links are defined in the study configuration. The synthetic delivery obligation is 7{,}950\,kg per day. Replay considers backup imports available at the configured limits and a complete interruption. Policy outcomes include shortage mass, shortage days, worst seven-day deficit, and the separate cost of production, imports, and transfers. All policies start with one day of delivery in storage per zone.
-
+\input{methodology}
+\input{experiments}
 \input{results}
 
 \section{Future Work}
-Evaluation with issue-time-stamped forecast runs, more winters, and hourly plant data would reduce ambiguity about availability, chronology, and intraday recourse. A later study can test import and production constraints against actual hydrogen contracts and link capacities. It can also measure how gains vary with alternative storage capacities and geographical renewable portfolios.
+\paragraph{Protect the reserve before optimizing flexibility.}
+The next experiment should pre-specify a minimum reserve during constrained import periods and let the optimizer allocate additional stock above it. A soft reserve shortfall in the current formulation is measured as an objective cost. A protected floor could instead be made contingent on imports and demonstrated availability, with explicit emergency slack when supply makes the floor infeasible. Retrospective results show why this comparison is worth testing on fresh data. Any new tuning should occur before scoring additional winters.
+
+\paragraph{Improve the information available at issue time.}
+Train and test on longer archives of forecast runs with explicit initialization and dissemination timestamps. Expand validation across winters, severe low wind events, and shifts in regional installed capacity. Test more calibrated trajectories per decision and report performance on event lead times, regional deficits, and cumulative deliveries. Conditioning residuals on weather regimes or pooling training across longer archives could improve estimates of multi-region low-supply weeks. Evaluate these changes against the same simple reserve and linear forecast comparators.
+
+\paragraph{Ground decisions in actual industrial constraints.}
+With operator data, replace illustrative renewable allocations and link limits with specific power contracts, tariffs, and transfer capacities. Represent intraday generation, variable prices, startup and ramp limits, compressor power, inventory losses, and backup lead times. A practical evaluation would compare a human-supervised scheduling tool against the operator's standing procedure in an offline replay before live use. Contract diversification and infrastructure design are complementary questions that can be evaluated with longer weather histories and explicit investment scenarios.
 
 \section{Conclusion}
-The study links a trained multi-region forecast to explicit decisions about hydrogen inventories and backup orders. Its paired historical replay measures the value of forecasts through delivered hydrogen as well as generation accuracy. The benchmark quantifies what each method achieved for the illustrative portfolio and provides a reproducible basis for testing improved models.
+AI can help Germany's hydrogen operators estimate when a wind and solar shortage may develop, which regions could be affected together, and how alternative production and transfer outcomes could change reserve and backup decisions. This study tested that role for an illustrative industrial portfolio with public German data and one forecast-and-optimization workflow. The reserve-weighted neural policy reduced shortfalls relative to its unweighted comparison, and ridge gave the best generation forecasts. The fixed reserve rule delivered the most hydrogen during the modeled interruption. The worst-week example links the neural result to low stocks entering a prolonged reduction in production. These findings support evaluating AI against a protected reserve benchmark and measuring success in delivered hydrogen as well as forecast accuracy.
 
 \section{AI Disclosure}
-OpenAI Codex assisted with implementation, analysis, and manuscript preparation. Numerical results come from the executed backtest and are recorded with the source and configuration checksums.
+OpenAI Codex assisted with the code, manuscript, analysis, and figures. The numerical findings are reproducible from the archived input configuration and executed Python workflow. Source data, comparison metrics, and checksums are available through the \studyrepo\ and \studydata.
 
 \onecolumn
-\begin{thebibliography}{9}
-\bibitem{strategy} German Federal Ministry for Economic Affairs and Energy. \emph{Hydrogen and the National Hydrogen Strategy}. \href{https://www.bundeswirtschaftsministerium.de/Redaktion/EN/Dossier/hydrogen.html}{Strategy dossier}.
-\bibitem{mockert} F. Mockert et al. \emph{Meteorological conditions during periods of low wind speed and insolation in Germany}. \href{https://doi.org/10.1002/met.2141}{Meteorological Applications, 2023}.
-\bibitem{mpc} B. Zhao et al. \emph{Optimization of wind-solar coupled green hydrogen production}. \href{https://www.sciencedirect.com/science/article/pii/S2213138826005321}{Publisher article, 2026}.
-\bibitem{smard} Bundesnetzagentur | SMARD.de. \emph{Market data and control areas}. \href{https://www.smard.de/en/downloadcenter/download-market-data/}{Data portal}.
-\bibitem{meteo} Open-Meteo. \emph{Previous Runs API}. \href{https://open-meteo.com/en/docs/previous-runs-api}{Forecast archive documentation}.
-\end{thebibliography}
-
+\bibliographystyle{plainnat}
+\begingroup
+\raggedright
+\bibliography{references}
+\endgroup
 \clearpage
 \appendix
-\section{National hydrogen mass balance}
-\begin{proof}
-Fix one day and scenario. Sum Eq.~\eqref{eq:balance} across all four zones. Each transfer contributes with a negative sign at its origin and an equal positive sign at its destination, so $\sum_zF^{\mathrm{net}}_{s,t,z}=0$. It follows that
-\[
-\sum_z S_{s,t,z}+\sum_z(D_z-U_{s,t,z})=\sum_z S_{s,t-1,z}+\sum_z(P_{s,t,z}+I_{s,t,z}).
-\]
-National closing stock plus deliveries equals opening stock, domestic production, and backup hydrogen received. Changing regional transfer decisions redistributes available hydrogen and conserves the national total under the modeled lossless links.
-\end{proof}
-
-\section{Generated backtest figure}
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{../report/backtest.png}
-\caption{Forecast distribution accuracy by lead day and unmet hydrogen demand during the simulated import interruption. The right panel holds the plant, delivery obligations, and link capacities fixed across the policies.}
-\end{figure}
+\pdfbookmark[0]{Appendix}{paper-appendix}
+\section*{Appendix}
+\input{appendix}
 \end{document}

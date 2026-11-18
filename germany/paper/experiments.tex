@@ -1,0 +1,28 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Portfolio and backup assumptions}
+The illustrative Germany-wide portfolio has one aggregate hydrogen node per SMARD control area. The four electrolyzers have a combined rated power of 63 MW and use 52 kWh per kilogram. Each zone purchases a specified fraction of its regional renewable generation, subject to Eq.~\eqref{eq:available}. Together the four nodes must deliver 7{,}950 kg/day. Storage is sized at four days of each node's delivery and starts with one day in stock. The terminal reserve target in each planning problem is also one day of demand per zone. Appendix Table~\ref{tab:sites} gives capacities and contracted generation shares. The synthetic network and operating costs are inherited from the experiment configuration. The base generation cost is EUR 45/MWh, modeled backup supply costs EUR 11/kg, transfers cost EUR 0.15/kg, and missed delivery incurs a EUR 100/kg penalty. A EUR 5/kg reserve-gap penalty and a EUR 0.002/kg-day stock-holding coefficient affect recommendations. The reported cash metric includes domestic production, backup, and transfer charges.
+
+The first operating case allows backup hydrogen up to the configured regional caps. In the second case the optimizer and replay treat backup as unavailable throughout. This is a stylized hydrogen import interruption motivated by diversification and reliability concerns. It corresponds to a known operating restriction during the replay. The experiment estimates delivery performance under these two backup constraints using the same weather dates. The illustrative fixed industrial contract isolates changes in the forecasting and dispatch decisions.
+
+\subsection{Time split and benchmark policies}
+The training data span 1 April--31 December 2024, calibration spans 1 January--30 September 2025, and the test spans 1 October 2025--30 September 2026. Each seven-day target window lies fully within a split, yielding 269, 267, and 359 issue dates. The last decision day replayed is 24 September 2026, so that its horizon ends on 30 September. Held-out outcomes are used only for scoring and realized dispatch after an order is fixed. Policies start with identical stocks and encounter identical realized generation and delivery demand. A single held-out winter and the overlapping forecast windows limit the evidence about rare disruptions.
+
+The fixed-reserve rule targets one delivery day of stock every day. It estimates today's available production using persistence and orders enough backup to cover demand and the stock gap within the import limit. It uses the same one-day real-time dispatch model as the forecast policies. The persistence forecast repeats the latest available generation observation across the horizon. Ridge regression uses the neural model's time-aligned inputs and predicts all generation targets using an $\ell_2$ penalty. Both forecasts are passed to the same scenario planner for a fairer comparison of forecast inputs. One controlled ablation uses the same neural architecture without weak-supply weighting, so the study can measure the effect of that change in the proposed workflow. The ablation is reported separately as a training comparison.
+
+\subsection{Forecast and delivery metrics}
+At each forecast lead, national generation is the sum of all observed wind and solar zones. The mean absolute error measures the point forecast in GWh/day. The continuous ranked probability score (CRPS) measures agreement between the ensemble and realized national generation, accounting for the distance to the observation and the spread of the ensemble \citep{gneiting2007}. For the event $Q(Y)\le q$, the fraction of ensemble paths meeting the threshold is the assessed probability. We use the mean squared difference between that probability and the observed event indicator, the Brier score. Lower values are better. These aggregated measures cover national renewable availability but cannot by themselves determine whether a particular zone will meet its hydrogen contract.
+
+For realized national generation $y$ and scenario totals $g_1,\ldots,g_m$ on a given day, the empirical score is
+\begin{equation}
+\begin{aligned}
+\CRPS &= \frac1m\sum_{s=1}^m|g_s-y| \\
+      &\quad-\frac{1}{2m^2}\sum_{s=1}^m\sum_{i=1}^{m}|g_s-g_i|.
+\end{aligned}
+\end{equation}
+The score is averaged over the 359 held-out origins separately for each lead time. For each portfolio policy, total unmet share is $\sum_{d,z}U_{d,z}/(359\sum_z D_z)$, using actual dispatch outcomes rather than the forecast's expected shortage.
+
+The operational outcomes are total unmet mass, unmet share of contracted demand, number of days with positive unmet demand, worst rolling seven-day deficit, backup procurement, transfers, and modeled cost. We also examine the most severe seven-day deficit of the focal policy in the interruption case. The week is picked after the replay to explain the observed pattern. Its outcomes are descriptive and the full test totals remain the primary comparison. A fixed-weight cost comparison applies alternative penalties for missed deliveries to the recorded policy outcomes.
+
+The one-day dispatch calculation assumes flexibility to allocate the day's observed aggregate energy. The planning problem also allows later actions to adapt to each full simulated path. These assumptions make the replay a daily decision experiment with flexible recourse. They can favor forecast-based operations relative to a plant with hourly ramping, long procurement lead times, or incomplete information within the day.

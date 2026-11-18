@@ -1,24 +1,55 @@
 \section{Results}
-\subsection{Forecast skill}
-The experiment had 269 training origins and 267 calibration origins. All 359 held-out origins had archived weather predictors. The ridge model had the lowest countrywide day-one CRPS at 62.6\,GWh/day, compared with 91.7 for the standard neural model, 92.7 for the reserve-weighted neural model, and 132.1 for persistence. At seven days the respective scores were 125.5, 156.0, 168.7, and 141.2\,GWh/day. Ridge also had the best Brier score for a low-supply week (0.070). Increasing the training weight of weak-supply weeks improved the neural model's Brier score from 0.119 to 0.116, while the linear model remained more accurate in this pilot.
+\label{sec:results}
+
+\subsection{How well did the AI predict renewable supply?}
+The reserve-weighted neural model improved on persistence for short lead times. Its day-one national CRPS was 92.7 GWh/day, compared with 132.1 for persistence. By day seven the relationship reversed, and the focal model scored 168.7 compared with 141.2 for persistence (Table~\ref{tab:forecasts}). Ridge had the lowest CRPS at all seven leads. Averaged equally across the seven leads, its national CRPS was 87.6 GWh/day, compared with 117.1 for the neural model and 137.8 for persistence. The focal point forecast still improved on persistence when measured by mean absolute error averaged across leads, 173.3 versus 230.2 GWh/day. This difference between point and distributional scores makes a separate ensemble evaluation useful.
 
 \begin{table}[t]
 \centering\small
-\caption{Unmet hydrogen demand over 359 days. The import interruption represents a modeled scenario.}
+\caption{Held-out national generation CRPS by lead in GWh/day. The Brier score uses the threshold for weak modeled hydrogen production. Lower scores are better.}
+\label{tab:forecasts}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Forecast & Day 1 & Day 3 & Day 7 & Brier \\
+\midrule
+Persistence & 132.1 & 140.9 & 141.2 & 0.099 \\
+Ridge & 62.6 & 67.8 & 125.5 & 0.070 \\
+Reserve-weighted AI & 92.7 & 95.1 & 168.7 & 0.116 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Thirty-two of the 359 held-out origins met the weak-supply event threshold, an observed rate of 8.9\%. The focal Brier score was 0.116. Under the matched training ablation, the score was 0.119 before weak-supply weighting. The weighting helped that event score slightly, while ridge remained ahead at 0.070. Appendix Table~\ref{tab:ablation} includes the training ablation and emphasizes that the target is a proxy for reserve risk. Forecasts with similar aggregate scores can still imply different regional delivery decisions.
+
+\subsection{Which policy protected deliveries?}
+In the simulated backup interruption, the focal policy missed 20.08 tonnes out of 2{,}854.05 tonnes of contracted demand. It had shortages on nine days, and the worst rolling seven-day deficit was 9.93 tonnes. With identical decision constraints, the unweighted training ablation missed 22.84 tonnes on eleven days. The weighting reduced total unmet mass by 2.76 tonnes, or 12.1\% relative to that ablation. The fixed reserve rule gave the highest delivery reliability. It missed 4.07 tonnes on two days. The ridge policy missed 8.57 tonnes on five days. Both used the same physical availability and transfer limits, and their different inventory decisions affected readiness for later low-production days.
+
+\begin{table}[t]
+\centering\small
+\caption{Unmet demand as a percentage of the held-out contract. The interruption sets backup availability to zero throughout the replay.}
+\label{tab:operations}
 \begin{tabular}{@{}lrr@{}}
 \toprule
-Policy & With imports & No imports \\
-       & (\%) & (\%) \\
+Policy & Backup available & Interrupted \\
 \midrule
 Fixed reserve & 0.000 & 0.143 \\
 Persistence & 0.636 & 0.853 \\
 Ridge & 0.045 & 0.300 \\
-Neural & 0.340 & 0.800 \\
-Reserve-weighted neural & 0.117 & 0.704 \\
+Reserve-weighted AI & 0.117 & 0.704 \\
 \bottomrule
 \end{tabular}
-\label{tab:operations}
 \end{table}
 
-\subsection{Delivery and operating trade-offs}
-Under the import interruption, reserve-weighted training lowered unmet demand from 0.800\% to 0.704\% relative to the ordinary neural forecast under the same optimizer (Table~\ref{tab:operations}). The fixed-reserve policy achieved the lowest shortage, 0.143\%, followed by ridge at 0.300\%. The fixed rule also achieved full delivery when backup imports were available. In that scenario, ridge had lower modeled cash costs (EUR 6.82 million versus EUR 7.42 million for the fixed rule) and missed 1.27 tonnes of delivery. The trade-off depends on the assumed cost of missed demand and backup hydrogen. The results favor keeping a fixed reserve benchmark and testing any forecast-based reserve rule on additional held-out winters before using it for reliability decisions.
+With backup available, the fixed rule met all delivery obligations and booked 85.14 tonnes over the test. The ridge policy booked 18.26 tonnes and missed 1.27 tonnes. Its modeled cash operating cost was EUR 6.82 million, compared with EUR 7.42 million for the fixed rule. Under the study's EUR 100/kg shortage penalty, the corresponding combined costs were EUR 6.95 million and EUR 7.42 million. Holding the recorded trajectories fixed, the cash saving of the ridge policy is equal to the cost of its additional unmet demand at roughly EUR 470 per kg. This break-even calculation describes the observed policy pair under other penalty values. New optimization at a different penalty can change both policies' decisions. Appendix Figure~\ref{fig:comparison} shows the lead-wise forecast scores and interruption shortfalls together.
+
+When backup was unavailable, the focal policy spent about EUR 0.058 million less in modeled cash than the fixed rule and missed about 16.01 tonnes more hydrogen. An ex-post penalty of about EUR 3.60/kg would offset that cash difference. At the stated EUR 100/kg penalty, the fixed rule has both less unmet demand and lower combined cost. This is why the assessment needs separate reliability and cost metrics. A small cash advantage accompanied by greater unmet delivery can be unattractive for a firm industrial commitment.
+
+\subsection{What happened in the worst week?}
+The focal policy's largest rolling interruption deficit occurred on 3--9 November 2025. This week accounted for about 49\% of its missed hydrogen over the entire test. The policies saw the same generation. At the close of 6 November, before their observed deficits, the fixed rule held 7.95 tonnes nationwide. The focal policy held about 1.26 tonnes. On 7 November the focal policy missed about 0.38 tonnes, while the fixed rule continued deliveries from storage. By 9 November the focal policy had exhausted its stock, and the week ended with about 9.93 tonnes unmet across the four zones. The fixed rule missed 3.24 tonnes over those same seven days, and the ridge policy missed 2.27 tonnes. The ridge policy lost more hydrogen than the fixed rule over the full test. Appendix Figure~\ref{fig:episode} shows the inventory and delivery trajectories for the week.
+
+The episode illustrates a specific way a forecast-based reserve plan can perform poorly. The chosen target followed the scenario average of first-day planned stock. Even with a tail penalty on missed deliveries, the target could fall well below one day of demand. The realized dispatch then entered a period of repeated low availability with that smaller reserve. The replay shows the association in this week and motivates a protected-stock comparison. It provides one observed winter and the findings should be tested on further held-out periods.
+
+\subsection{What this means for AI in German hydrogen operations}
+The main benefit of the AI workflow is the ability to make weather uncertainty explicit before booking backup and allocating regional inventories. A joint forecast can suggest whether low generation is likely to hit one part of the modeled network or several at once. This is useful information for reserving capacity and assessing the consequences of regional transfer limits. The held-out replay shows that measuring forecast quality alone can overstate the value of a policy. Ridge was the strongest forecast, while the fixed reserve rule was most reliable during the interruption. The consequence for industrial operations is to judge a forecast-based tool on what it would have delivered under the operator's actual reserve and contract constraints.
+
+These findings complement published work on weather regimes and renewable droughts in Germany \citep{mockert2023,strnad2026}. That work addresses physical drivers or long-term changes in event frequency, and this backtest isolates a next-week delivery decision. Comparisons with the hydrogen control literature concern the modeling decisions and validation target \citep{zhao2026}. The numerical results in this paper compare policies on the same German generation series and simulated hydrogen constraints. The figures describe the illustrative portfolio and its contractual assumptions.

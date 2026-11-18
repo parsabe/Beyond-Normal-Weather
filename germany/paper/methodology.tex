@@ -1,0 +1,74 @@
+\section{Methodology}
+\label{sec:method}
+The workflow combines one reserve-weighted neural forecast, empirical forecast-error scenarios, and a rolling inventory optimization. The neural network estimates available renewable electricity. The optimization turns that information into hydrogen reserve targets and backup orders under explicit capacity and conservation constraints. Appendix Figure~\ref{fig:workflow} shows where data and physical assumptions enter the workflow.
+
+\subsection{German generation and archived weather}
+\label{sec:data}
+Daily onshore wind, available offshore wind, and photovoltaic generation come from Bundesnetzagentur | SMARD.de \citep{smard}. The four German electricity control areas are 50Hertz, Amprion, TenneT, and TransnetBW. Onshore and offshore wind are combined into a wind series, producing eight daily regional technology series. Offshore series are used where reported and configured. The extracted SMARD time indices are converted to local calendar days in \texttt{Europe/Berlin}; data manifests record source URLs and checksums. Regional generation is measured in MWh per day.
+
+Weather predictors are archived ECMWF IFS forecasts at $0.25^\circ$, distributed through Open-Meteo's Previous Runs API \citep{meteo}. The two fields are 10-m wind speed and shortwave solar radiation, averaged across two representative points per zone. These points are regional predictors for the measured area totals. Let $d$ denote a planning date and $t=1,\ldots,7$ the forecast lead day. The target is local date $d+t-1$. Its weather predictors use the fields at the archive's previous-day-$t$ offset and local valid hours 00:00 through 18:00. Subtracting the nominal $24t$-hour offset leaves a buffer before decision day $d$, including a 25-hour autumn clock-change day. The archive aligns fields by valid time and lead offset. It pools individual runs and lacks a release timestamp for each value, so the replay checks offsets and the nominal buffer. A real-time system would require explicit issue and ingestion timestamps.
+
+The generator history supplied to the model ends at $d-2$, allowing a full local day for daily reporting. It includes the last three available daily observations and a seven-day mean, separately for all eight output series. The seven future weather blocks and sine and cosine terms for their calendar dates complete the feature vector. Regional generation features and targets are divided by corresponding training-period means. Input standardization and imputation are estimated on the training interval. The three retained splits had complete weather predictors at every evaluated origin.
+
+\subsection{One neural forecast focused on weak supply}
+\label{sec:neural}
+For issue date $d$, the multilayer perceptron maps the feature vector $x_d$ to $7\times4\times2$ outputs. Its two hidden layers have 64 and 32 units with rectified linear activations. The outputs are estimates of normalized wind and solar generation for all regions and dates in the forecast week. This joint output uses shared hidden layers to learn across locations and generation types. Restoring the training scales and clipping negative values yields the generation estimate $\widehat Y_d$, in MWh per day.
+
+Define $A_z(Y)$ as available hydrogen production in zone $z$ given renewable output $Y$. If $g_z$ is the assumed power-contract share, $W_z$ the installed electrolyzer capacity in MW, and $e$ its specific electricity consumption in kWh/kg, then
+\begin{equation}
+\label{eq:available}
+A_z(Y)=\frac{1000}{e}\min\!\left\{24W_z,\,g_z\sum_jY_{z,j}\right\},
+\end{equation}
+where $j$ indexes wind and solar. The conversion gives kilograms per day. The plant can produce up to this quantity. The term $24W_z$ represents a daily energy ceiling.
+
+For a weekly generation trajectory $Y$, define its lowest three-day average national production potential as
+\begin{equation}
+\label{eq:weak}
+Q(Y)=\min_{r=1,\ldots,5}\frac{1}{3}
+       \sum_{t=r}^{r+2}\sum_z A_z(Y_t).
+\end{equation}
+Let $q$ be the empirical 20th percentile of $Q(Y_d)$ on the training dates. The focal network fits regularized squared error with training weight 3 for windows at or below $q$ and weight 1 elsewhere. Equivalently, the data-fit part of the loss is the weighted mean squared distance between the network outputs and normalized generation trajectories. The threshold stays fixed during the test. It describes unusual production potential in this portfolio, and the observed delivery outcome still depends on inventory, transfers, and backup. The 7{,}950 kg/day delivery contract is below the fitted weak-supply cutoff of about 10{,}784 kg/day. This distinction prevents counting every weak-supply forecast as an expected missed delivery.
+
+\subsection{Weekly forecast scenarios}
+Each calibration origin has a vector of errors covering all seven days and both technologies in every zone. For a new issue, calibration origins are ranked by a distance formed from the difference in predicted $Q$, divided by its calibration standard deviation with a unit floor, plus the circular day-of-year distance divided by 120. From the nearest 60 origins the model samples eight without replacement. It adds one complete error trajectory to each point prediction and clips negative generation at zero. Joint resampling preserves the pairing of regional and daily errors within each drawn residual sequence, subject to clipping of the resulting levels. It uses only the calibration residual pool and information available to the forecast model at issue. Ridge and persistence use the same scenario construction with their own calibration errors.
+
+\subsection{Hydrogen production, inventory, and risk}
+\label{sec:dispatch}
+Index each forecast path by $s$, day by $t$, and zone by $z$. The decision variables are production $P$, booked backup hydrogen $I$, unmet demand $U$, closing inventory $S$, and the amounts transported in either direction on each link. Let $F^{\mathrm{net}}_{s,t,z}$ denote net inbound transfer and $D_z$ the delivery commitment. The inventory equation is
+\begin{equation}
+\label{eq:balance}
+\begin{aligned}
+S_{s,t,z} &= S_{s,t-1,z}+P_{s,t,z}+I_{s,t,z} \\
+          &\quad+F^{\mathrm{net}}_{s,t,z}-D_z+U_{s,t,z}.
+\end{aligned}
+\end{equation}
+Production is bounded by Eq.~\eqref{eq:available} for each path and date. Storage lies between zero and the configured tank capacity. Unmet demand is capped by the delivery obligation, and both directions on each link share one capacity. Imports are bounded by the scenario's regional backup limits. From a common opening stock, first-day orders $I_{s,1,z}$ are constrained to agree across forecast paths. This makes the advance decision feasible to implement using the information at issue time. The planner allows scenario-specific production, transfers, and later actions. Appendix~\ref{app:mass} derives national conservation from the regional equation.
+
+The objective is an expected sum of linear charges for production, imports, transfers, missed delivery, stock holding, and a terminal reserve gap, plus a risk penalty on large cumulative shortages. Let $L_s=\sum_{t,z}U_{s,t,z}$, $m=8$, and $\alpha=0.90$. The conditional value-at-risk term is represented by one threshold $\eta$ and deviations $v_s$ \citep{rockafellar2000}:
+\begin{equation}
+\label{eq:risk}
+\eta+\frac{\sum_{s=1}^{m}v_s}{m(1-\alpha)},\qquad
+v_s\ge L_s-\eta,\quad v_s\ge 0.
+\end{equation}
+The objective prices this term at EUR 35 per kg in addition to the expected unmet-delivery penalty. At eight equally weighted paths and a 90\% level, the minimized tail term equals the maximum sampled shortage. Appendix~\ref{app:cvar} proves this finite-sample property. The choice provides a transparent penalty on large sampled losses and depends on which paths the forecast ensemble captures.
+
+Each optimization emits the common first-day import order and a reserve target equal to the mean first-day closing inventory across the planned paths. The replay commits the import order before using the actual first-day renewable supply. A one-day dispatch optimization then uses the observed production limit, planned reserve target, and committed orders to allocate production and transfers. Falling below the target incurs a soft penalty. Closing inventory becomes the opening state for the next issue. Algorithm~\ref{alg:week} summarizes the sequence.
+
+\begin{algorithm}[t]
+\caption{Regional forecast and reserve recommendation}
+\label{alg:week}
+\small
+\begin{algorithmic}[1]
+\Require Regional weather and generation, portfolio, delivery demand
+\State Fit the weak-supply-weighted neural forecast.
+\State Save intact calibration error trajectories.
+\For{each held-out decision date}
+  \State Predict seven days of regional wind and solar.
+  \State Draw eight residual paths from comparable weeks.
+  \State Solve shared first-day import orders and reserve targets.
+  \State Fix the orders and reveal realized first-day availability.
+  \State Dispatch production, transfers, and delivery.
+  \State Carry realized inventory into the next day's plan.
+\EndFor
+\end{algorithmic}
+\end{algorithm}
