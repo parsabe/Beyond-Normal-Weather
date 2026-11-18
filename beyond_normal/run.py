@@ -89,16 +89,20 @@ def plot_results(scores, summary, output):
                 ylabel="CRPS for annual unmet demand (percentage points)")
     axes[0].legend(frameon=False)
 
-    future = summary.loc[summary.method == "storage_calibrated"]
-    for scenario, rows in future.groupby("scenario"):
-        spread = rows.groupby("storage_days").mean_unmet_fraction.agg(["min", "mean", "max"])
-        line, = axes[1].plot(spread.index, 100 * spread["mean"], marker="o", label=scenario.upper())
-        axes[1].fill_between(spread.index, 100 * spread["min"], 100 * spread["max"],
-                             color=line.get_color(), alpha=0.14)
+    scenarios = {"ssp245": ("SSP2-4.5", "#356caf"), "ssp585": ("SSP5-8.5", "#b96335")}
+    for scenario, rows in summary.groupby("scenario"):
+        label, color = scenarios[scenario]
+        baseline = rows.loc[rows.method == "gcm_chronology"]
+        spread = baseline.groupby("storage_days").mean_unmet_fraction.agg(["min", "mean", "max"])
+        calibrated = rows.loc[rows.method == "storage_calibrated"].groupby("storage_days").mean_unmet_fraction.mean()
+        axes[1].plot(spread.index, 100 * spread["mean"], marker="o", color=color, label=f"{label} · model order")
+        axes[1].plot(calibrated.index, 100 * calibrated, linestyle="--", color=color, label=f"{label} · calibrated")
+        axes[1].fill_between(spread.index, 100 * spread["min"], 100 * spread["max"], color=color, alpha=0.10)
     axes[1].set(title="Future mean annual unmet demand", xlabel="Storage (days of delivery)",
                 ylabel="Unmet hydrogen delivery (%)")
-    axes[1].legend(title="Shading spans models", frameon=False)
+    axes[1].legend(title="Shading spans baseline models", frameon=False)
     for axis in axes:
+        axis.set_xticks(sorted(scores.storage_days.unique()))
         axis.grid(axis="y", alpha=0.2)
         axis.spines[["top", "right"]].set_visible(False)
     fig.savefig(output, dpi=160)
