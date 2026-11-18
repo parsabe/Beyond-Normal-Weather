@@ -1,0 +1,78 @@
+{
+  "config": {
+    "site": {
+      "name": "Syracuse, New York",
+      "latitude": 43.05,
+      "longitude": -76.15
+    },
+    "periods": {
+      "train": [
+        1981,
+        1998
+      ],
+      "calibration": [
+        1999,
+        2006
+      ],
+      "test": [
+        2007,
+        2014
+      ],
+      "future": [
+        2041,
+        2060
+      ]
+    },
+    "plant": {
+      "wind_mw": 30.0,
+      "solar_mw": 20.0,
+      "electrolyzer_mw": 25.0,
+      "kwh_per_kg": 52.0,
+      "delivery_kg_per_day": 2700.0,
+      "storage_days": [
+        0,
+        1,
+        3,
+        7,
+        14
+      ],
+      "withheld_storage_days": 7,
+      "target_unmet_fraction": 0.01
+    },
+    "experiment": {
+      "seed": 20261118,
+      "ensemble_members": 24,
+      "replacement_fractions": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "block_days": [
+        3,
+        7,
+        14
+      ]
+    }
+  },
+  "config_sha256": "e31526f8cbf2615b0130f3a0adebda4e6514bc9e98707d4e65c40a772796a5cb",
+  "catalog_sha256": "da6e83260466b39a60e2d3011813723b7daf3f6195cbaa95ab58632c4c4c2143",
+  "input_sha256": {
+    "era5_daily.csv": "9a4a6f84d3c04d0497d6bc5988bf05c2d2f8b6c03d615be96f1bece308e59d38",
+    "ACCESS-CM2_historical.csv": "992c6d2a3361aaa439ccb6a6891f4a8e1c3abbd9c1510d2e829e1b922e96fa86",
+    "ACCESS-CM2_ssp245.csv": "6110d3f9a725dcd90d589df6242d288b6cb7b7b8f41afa2be5f824819faceec3",
+    "ACCESS-CM2_ssp585.csv": "936b44ae188791e3114a3ee2f6f960669543ddc689108180e76f7d5a10d880a7",
+    "MPI-ESM1-2-HR_historical.csv": "6f3debeb76616915d6e818001594d8e1f4964d99361cacbd14a815e3895406a2",
+    "MPI-ESM1-2-HR_ssp245.csv": "2ce0ab703d6a1eb6efe3c1005d80c9017d3787c60331d93a80f68a1c5becdfe7",
+    "MPI-ESM1-2-HR_ssp585.csv": "82916ea101657bf23c1a8c4b7d5a36f870854501c3ca7b53170801d57458cecb",
+    "MRI-ESM2-0_historical.csv": "013b191d150e4fedc7b73127d1d665a7e31456b3ab6c9ae79f6cb9956158279d",
+    "MRI-ESM2-0_ssp245.csv": "66f619901c46a08569404d5387b10a093a6b8273e7cc783842acb7a5d83bd31a",
+    "MRI-ESM2-0_ssp585.csv": "2574ce0d825163195258e63219e7abfc71d2046fedd15c6ce8b9d68a88bce030"
+  },
+  "python_packages": {
+    "numpy": "2.5.5",
+    "pandas": "3.1.1",
+    "matplotlib": "3.11.2"
+  },
+  "selected_fraction": 1.0,
+  "selected_block_days": 3
+}

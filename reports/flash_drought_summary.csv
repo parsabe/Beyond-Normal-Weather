@@ -1,0 +1,5 @@
+method,resource,study_mean_change_percent,study_min_change_percent,study_max_change_percent,published_nearby_change_percent
+gcm_chronology,solar,63.214286,-80,212.5,-2.0448375
+gcm_chronology,wind,38.095238,0,57.142857,11.762294
+storage_calibrated,solar,9.1374269,-52.272727,44.078947,-2.0448375
+storage_calibrated,wind,16.375235,11.029412,22.522523,11.762294

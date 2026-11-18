@@ -1,0 +1,33 @@
+{
+  "paper": "https://doi.org/10.1038/s41558-026-02753-3",
+  "workbook": "Source Data/Source_Data_Fig.2.xlsx",
+  "source_archive_sha256": "7275818234108510e07de3acb7c3b4adbcfce1ed19bbb19c3981dd61708632af",
+  "source_cell": {
+    "latitude": 43.5,
+    "longitude": -76.5
+  },
+  "site": {
+    "name": "Syracuse, New York",
+    "latitude": 43.05,
+    "longitude": -76.15
+  },
+  "historical_period": [
+    1985,
+    2014
+  ],
+  "future_period": [
+    2045,
+    2074
+  ],
+  "scenario": "ssp245",
+  "fit_manifest_sha256": "1e982e87142d167fe5a86bc7ae22f909cf3d821f06806643d4313fe136f01194",
+  "input_sha256": {
+    "era5_daily.csv": "9a4a6f84d3c04d0497d6bc5988bf05c2d2f8b6c03d615be96f1bece308e59d38",
+    "ACCESS-CM2_historical.csv": "992c6d2a3361aaa439ccb6a6891f4a8e1c3abbd9c1510d2e829e1b922e96fa86",
+    "MPI-ESM1-2-HR_historical.csv": "6f3debeb76616915d6e818001594d8e1f4964d99361cacbd14a815e3895406a2",
+    "MRI-ESM2-0_historical.csv": "013b191d150e4fedc7b73127d1d665a7e31456b3ab6c9ae79f6cb9956158279d",
+    "../Beyond-Normal/data/raw/lin-2026/ACCESS-CM2_ssp245.csv": "326a3dfd609f36f006e663dda3e15d05c064b7a55b70978f1b9ef4abf1851afe",
+    "../Beyond-Normal/data/raw/lin-2026/MPI-ESM1-2-HR_ssp245.csv": "18f6a0fb25fdc4ef13e9f118617583c8961a349dc3b21e7a86e6460868dd9b44",
+    "../Beyond-Normal/data/raw/lin-2026/MRI-ESM2-0_ssp245.csv": "0abd892ba6394e4a20222a07d9f45d3a043cb000adf39c30e71e677417dea3a1"
+  }
+}

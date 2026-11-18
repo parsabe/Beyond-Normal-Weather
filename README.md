@@ -40,4 +40,6 @@ python3.12 -m venv .venv
 | `comparison.png` | Holdout CRPS and future storage sensitivity |
 | `run_manifest.json` | Design, versions, chosen parameters, and checksums |
 
-For the paper-data comparison and pilot interpretation, see `hydrogen-benchmarks`.
+## Published-data benchmark
+
+Read the [pilot findings](reports/README.md) and see the [published-data comparison protocol](benchmarks/README.md).

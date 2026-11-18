@@ -1,0 +1,13 @@
+model,method,resource,historical_events_per_30_years,future_events_per_30_years,valid_trajectories,total_trajectories,change_percent,published_nearby_change_percent
+ACCESS-CM2,gcm_chronology,wind,7,11,1,1,57.142857,11.762294
+ACCESS-CM2,gcm_chronology,solar,8,25,1,1,212.5,-2.0448375
+ACCESS-CM2,storage_calibrated,wind,5.6666667,6.2916667,24,24,11.029412,11.762294
+ACCESS-CM2,storage_calibrated,solar,6.3333333,9.125,24,24,44.078947,-2.0448375
+MPI-ESM1-2-HR,gcm_chronology,wind,7,11,1,1,57.142857,11.762294
+MPI-ESM1-2-HR,gcm_chronology,solar,7,11,1,1,57.142857,-2.0448375
+MPI-ESM1-2-HR,storage_calibrated,wind,5.0833333,5.875,24,24,15.57377,11.762294
+MPI-ESM1-2-HR,storage_calibrated,solar,5.5,7.4583333,24,24,35.606061,-2.0448375
+MRI-ESM2-0,gcm_chronology,wind,6,6,1,1,0,11.762294
+MRI-ESM2-0,gcm_chronology,solar,5,1,1,1,-80,-2.0448375
+MRI-ESM2-0,storage_calibrated,wind,4.625,5.6666667,24,24,22.522523,11.762294
+MRI-ESM2-0,storage_calibrated,solar,5.5,2.625,24,24,-52.272727,-2.0448375
