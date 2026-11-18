@@ -1,5 +1,7 @@
 # Beyond Normal Weather
 
+The `germany-ai-operations` branch adds a Germany-wide forecast and hydrogen reserve scheduling study. [Germany implementation, data, and results](germany/README.md).
+
 Can a weather model calibrated against hydrogen delivery shortfalls improve estimates of storage reliability? This repository tests that question with ERA5, three CMIP6 models, and an illustrative wind–solar hydrogen plant near Syracuse, New York. The [original proposal](Project/new%20-%20Topic.pdf) motivates the study. The earlier New York heat experiment is on `master`.
 
 ## Run the experiment

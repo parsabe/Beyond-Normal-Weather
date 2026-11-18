@@ -1,0 +1,77 @@
+[periods]
+train = ["2024-04-01", "2024-12-31"]
+calibration = ["2025-01-01", "2025-09-30"]
+test = ["2025-10-01", "2026-09-30"]
+
+[experiment]
+data_start = "2024-01-01"
+horizon_days = 7
+generation_history_days = 7
+scenarios = 8
+seed = 131
+
+[plant]
+days_of_storage = 4.0
+terminal_reserve_days = 1.0
+kwh_per_kg = 52.0
+renewable_eur_per_mwh = 45.0
+import_eur_per_kg = 11.0
+transfer_eur_per_kg = 0.15
+unmet_eur_per_kg = 100.0
+reserve_gap_eur_per_kg = 5.0
+cvar_weight = 35.0
+cvar_level = 0.90
+
+# All plant capacities, contracted shares, inter-zone links and import
+# commitments are assumptions of the experimental system.
+[[zone]]
+name = "50Hertz"
+locations = [[53.9, 12.0], [51.2, 13.4]]
+offshore = true
+contract_share = 0.0015
+electrolyzer_mw = 15.0
+delivery_kg = 2300.0
+import_limit_kg = 1200.0
+
+[[zone]]
+name = "Amprion"
+locations = [[51.6, 7.3], [49.8, 7.9]]
+offshore = "if_reported"
+contract_share = 0.0018
+electrolyzer_mw = 16.0
+delivery_kg = 2000.0
+import_limit_kg = 1200.0
+
+[[zone]]
+name = "TenneT"
+locations = [[54.6, 8.3], [48.9, 11.6]]
+offshore = true
+contract_share = 0.0015
+electrolyzer_mw = 24.0
+delivery_kg = 2600.0
+import_limit_kg = 1800.0
+
+[[zone]]
+name = "TransnetBW"
+locations = [[49.0, 9.1], [47.85, 9.0]]
+offshore = false
+contract_share = 0.003
+electrolyzer_mw = 8.0
+delivery_kg = 1050.0
+import_limit_kg = 650.0
+
+[[link]]
+zones = ["50Hertz", "TenneT"]
+capacity_kg = 1500.0
+
+[[link]]
+zones = ["TenneT", "Amprion"]
+capacity_kg = 1300.0
+
+[[link]]
+zones = ["Amprion", "TransnetBW"]
+capacity_kg = 850.0
+
+[[link]]
+zones = ["TenneT", "TransnetBW"]
+capacity_kg = 800.0

@@ -1,0 +1,24 @@
+\section{Results}
+\subsection{Forecast skill}
+The experiment had 269 training origins and 267 calibration origins. All 359 held-out origins had archived weather predictors. The ridge model had the lowest countrywide day-one CRPS at 62.6\,GWh/day, compared with 91.7 for the standard neural model, 92.7 for the reserve-weighted neural model, and 132.1 for persistence. At seven days the respective scores were 125.5, 156.0, 168.7, and 141.2\,GWh/day. Ridge also had the best Brier score for a low-supply week (0.070). Increasing the training weight of weak-supply weeks improved the neural model's Brier score from 0.119 to 0.116, while the linear model remained more accurate in this pilot.
+
+\begin{table}[t]
+\centering\small
+\caption{Unmet hydrogen demand over 359 days. The import interruption represents a modeled scenario.}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Policy & With imports & No imports \\
+       & (\%) & (\%) \\
+\midrule
+Fixed reserve & 0.000 & 0.143 \\
+Persistence & 0.636 & 0.853 \\
+Ridge & 0.045 & 0.300 \\
+Neural & 0.340 & 0.800 \\
+Reserve-weighted neural & 0.117 & 0.704 \\
+\bottomrule
+\end{tabular}
+\label{tab:operations}
+\end{table}
+
+\subsection{Delivery and operating trade-offs}
+Under the import interruption, reserve-weighted training lowered unmet demand from 0.800\% to 0.704\% relative to the ordinary neural forecast under the same optimizer (Table~\ref{tab:operations}). The fixed-reserve policy achieved the lowest shortage, 0.143\%, followed by ridge at 0.300\%. The fixed rule also achieved full delivery when backup imports were available. In that scenario, ridge had lower modeled cash costs (EUR 6.82 million versus EUR 7.42 million for the fixed rule) and missed 1.27 tonnes of delivery. The trade-off depends on the assumed cost of missed demand and backup hydrogen. The results favor keeping a fixed reserve benchmark and testing any forecast-based reserve rule on additional held-out winters before using it for reliability decisions.
