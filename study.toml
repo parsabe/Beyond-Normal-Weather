@@ -1,0 +1,26 @@
+[site]
+name = "Syracuse, New York"
+latitude = 43.05
+longitude = -76.15
+
+[periods]
+train = [1981, 1998]
+calibration = [1999, 2006]
+test = [2007, 2014]
+future = [2041, 2060]
+
+[plant]
+wind_mw = 30.0
+solar_mw = 20.0
+electrolyzer_mw = 25.0
+kwh_per_kg = 52.0
+delivery_kg_per_day = 2700.0
+storage_days = [0, 1, 3, 7, 14]
+withheld_storage_days = 7
+target_unmet_fraction = 0.01
+
+[experiment]
+seed = 20261118
+ensemble_members = 24
+replacement_fractions = [0.25, 0.5, 1.0]
+block_days = [3, 7, 14]
