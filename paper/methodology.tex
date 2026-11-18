@@ -1,0 +1,81 @@
+\section{Methodology}
+\label{sec:methodology}
+The pipeline separates the distribution of each resource from the sequence that reaches the plant. Figure~\ref{fig:workflow} in the appendix shows the data flow. First, local reanalysis supplies a weather and generation reference. Each climate model is mapped to this reference at the level of monthly distributions. The baseline retains climate-model day order after that mapping. The candidate changes the order and wind--solar pairing before applying the same daily dispatch model.
+
+\subsection{Weather inputs and local capacity factors}
+\label{sec:datasets}
+The reference site is Syracuse, New York (43.05$^{\circ}$N, 76.15$^{\circ}$W). ERA5 provides hourly 10\,m and 100\,m wind speeds and surface downward shortwave radiation, accessed through the Open-Meteo archive \citep{hersbach2020,openmeteo}. For the wind proxy, a cubic power curve starts at 3\,m\,s$^{-1}$, reaches rated power at 12\,m\,s$^{-1}$, and switches off at 25\,m\,s$^{-1}$. For the solar proxy, hourly radiation in W\,m$^{-2}$ is multiplied by $0.85/1000$ and clipped to $[0,1]$. Averaging the resulting hourly capacity factors gives the daily generation reference. Daily 10\,m wind and shortwave radiation are also averaged for comparison with the global models. Radiation intervals are grouped by their reported UTC timestamp. The derived capacity factors represent an idealized system driven by reanalysis.
+
+The CMIP6 inputs are daily near-surface wind speed and downward shortwave radiation from ACCESS-CM2, MPI-ESM1-2-HR, and MRI-ESM2-0 \citep{eyring2016,pangeo}. The pipeline selects the nearest native-grid point for each model and matches the model, realization, grid, and date between its two variables. Each model contributes one realization, \texttt{r1i1p1f1}. The source catalog records the version of each store. Extraction checks coverage, calendar, units, grid consistency, and daily continuity.
+
+\subsection{Monthly marginal correction}
+For a given model, calendar month, and resource, let $x_t$ be the target daily value and $q_t$ its empirical fractional rank within that calendar month across the target window. With average ranks for ties, $q_t=(\operatorname{rank}(x_t)-0.5)/n_m$, where $n_m$ is the number of target days in month group $m$. Write $Q_{R,m}$ for the ERA5 reference quantile function and $Q_{H,m}$ for the historical climate-model quantile function, both fitted on the training period. The correction takes the form
+\begin{equation}
+\label{eq:qdm}
+\widetilde{x}_t = \max\!\left\{0,\,
+  x_t+Q_{R,m}(q_t)-Q_{H,m}(q_t)\right\}.
+\end{equation}
+The implementation interpolates the quantile difference on 201 evenly spaced probability levels. The monthly generation transfer then interpolates from the ERA5 weather quantiles to the corresponding ERA5 capacity-factor quantiles and clamps outside the historical weather range. This use of additive quantile delta mapping carries modeled changes into the corrected weather values before nonnegative clipping and the nonlinear generation transfer. Both subsequent operations can attenuate changes in the tails. The resulting daily wind and solar capacity factors are common to all chronology methods for a given model and window.
+
+\subsection{Conditional paired rank blocks}
+Let $\mathbf{r}_t=(r_{t,w},r_{t,s})$ be the vector of monthly fractional ranks of the two corrected capacity factors. The scheme selects a block length $\ell$ and an independent block replacement probability $f$. Each member starts its partition at a random offset from $0$ through $\ell-1$. For an eligible start $t$, the method considers consecutive blocks in the ERA5 training archive that start in the same calendar month. It ranks candidate blocks by the sum of squared differences in the starting rank vector and the block-mean rank vector. The comparison uses the available target days at the end of a window. A selected replacement draws uniformly from the nearest 20 admissible source blocks, or all admissible blocks if fewer are available, and copies the paired ranks. The final target block receives only the needed prefix.
+
+The resulting scores provide an order for the original corrected values. For each calendar month and each variable independently, the method assigns the sorted corrected values to the dates ordered by their resampled ranks. Stable ordering resolves ties. Each member thus preserves the exact empirical marginal distributions over all instances of a given calendar month in its window (Appendix~\ref{app:marginals}). Weather timing, same-day wind--solar pairing, and year-to-year concentrations can change. The model-order member corresponds to $f=0$. The fixed resampling comparison uses $(f,\ell)=(1,7)$, and a nonzero setting produces 24 sequences per model and window.
+
+\subsection{Hydrogen dispatch and annual shortfall}
+Let $w_t$ and $s_t$ denote daily capacity factors, $P_w$ and $P_s$ installed wind and solar power, and $P_e$ electrolyzer capacity, all power ratings in MW. With efficiency parameter $e$ in kWh per kg, produced hydrogen in kg is
+\begin{equation}
+\label{eq:production}
+G_t = \frac{24{,}000}{e}\min\{P_e,\,P_ww_t+P_ss_t\}.
+\end{equation}
+Daily energy averaging places the electrolyzer cap on the daily equivalent power. Given contracted demand $D$ in kg per day, initial inventory $S_{t-1}$, and a tank of $k$ delivery days, the provisional balance $B_t$, unmet delivery $U_t$, and closing inventory $S_t$ are
+\begin{equation}
+\label{eq:dispatch}
+\begin{aligned}
+B_t &= S_{t-1}+G_t-D,\\
+U_t &= \max\{-B_t,0\},\\
+S_t &= \clip(B_t,0,kD).
+\end{aligned}
+\end{equation}
+The plant serves delivery before storing surplus. Each sequence starts empty and repeats its first year once as warm-up before scoring. Inventory carries across scored years. The annual unmet share is $L_{y,k}=\sum_{t\in y}U_t/(D\,n_y)$, where $n_y$ is the number of days in the model's calendar year. The same dispatch and plant parameters are used for the ERA5 reference. Appendix~\ref{app:dispatch} proves mass balance and monotonicity with tank size for a fixed sequence.
+
+\subsection{Storage-oriented model selection}
+The score compares a simulated distribution of annual unmet demand at each tank size with each reference year. For $M$ simulated annual losses $z_1,\ldots,z_M$ and a reference loss $a$, the empirical continuous ranked probability score is
+\begin{equation}
+\label{eq:crps}
+\begin{aligned}
+\CRPS(\widehat F_M,a)
+&=\frac{1}{M}\sum_{i=1}^{M}|z_i-a|\\[-2pt]
+&\quad{}-\frac{1}{2M^2}\sum_{i,j=1}^{M}|z_i-z_j|.
+\end{aligned}
+\end{equation}
+Lower values indicate better agreement between the predictive distribution and the reference \citep{gneiting2007}. The simulation pools annual losses from the three climate models, giving the models equal weight within each chronology method. The objective averages Eq.~\eqref{eq:crps} across ERA5 calibration years and tank sizes of 0, 1, 3, and 14 days. The search covers $f\in\{0.25,0.50,1\}$ and $\ell\in\{3,7,14\}$, plus the model-order baseline. The seven-day tank is excluded from selection. Appendix~\ref{app:crps} derives the equivalent sorted-sample expression used in the implementation.
+
+\begin{algorithm}[t]
+\caption{Fit and test the weather chronology}
+\label{alg:pipeline}
+\small
+\begin{algorithmic}[1]
+\Require ERA5, matched CMIP6 runs, plant, tank sizes
+\Ensure Frozen block setting and shortfall distributions
+\State Build daily ERA5 weather and generation proxies.
+\State Fit monthly quantile maps on the training years.
+\State Build a paired ERA5 rank library from those years.
+\State Map each model's calibration weather to power.
+\For{each candidate setting $(f,\ell)$}
+  \For{each model and member}
+    \State Partition the sequence into blocks of length $\ell$.
+    \State Sample analog ranks with probability $f$ per block.
+    \State Reorder corrected values by these monthly ranks.
+    \State Dispatch the plant for each tuning tank size.
+  \EndFor
+  \State Pool model losses and score against ERA5 years.
+\EndFor
+\State Freeze the setting with the smallest mean CRPS.
+\State Evaluate all methods on the withheld years and tank.
+\State Apply frozen settings to the two future scenarios.
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Sequence diagnostics}
+Two interventions perturb the model-order sequence after marginal correction. One randomly permutes paired wind and solar days within each calendar month and year, preserving same-day resource pairs while weakening chronological runs. The other applies a random circular shift to solar within each month and year, leaving the wind series intact and largely preserving solar runs within the month apart from the wrap. It changes wind--solar alignment. Both conserve each resource's values within each month and year. Edges between shifted months and the reordering itself limit interpretation as single-mechanism physical interventions. Appendix~\ref{app:timing} gives a worked example of changed storage losses under an exact permutation of production values.

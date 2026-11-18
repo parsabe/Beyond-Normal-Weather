@@ -1,0 +1,94 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[sc]{mathpazo}
+\usepackage[scale=0.92]{tgheros}
+\usepackage[a4paper,margin=19mm,headsep=5mm,footskip=10mm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm,algpseudocode}
+\usepackage{booktabs,graphicx}
+\usepackage{xcolor,titlesec}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[round,sort]{natbib}
+
+\definecolor{Ink}{HTML}{1F303B}
+\definecolor{ProjectBlue}{HTML}{174F91}
+\definecolor{ReferenceTeal}{HTML}{14675A}
+\definecolor{LinkSlate}{HTML}{314E67}
+\usepackage[colorlinks=true,urlcolor=ProjectBlue,citecolor=ReferenceTeal,
+  linkcolor=LinkSlate,pdfborder={0 0 0},
+  pdftitle={Weather Chronology and Green Hydrogen Reliability},
+  pdfauthor={Parsa Besharat},
+  pdfsubject={A reproducible climate-to-hydrogen storage pilot near Syracuse, New York}]{hyperref}
+
+\setlength{\columnsep}{7mm}
+\setlength{\emergencystretch}{1.3em}
+\setlength{\bibsep}{4pt}
+\widowpenalty=10000
+\clubpenalty=10000
+\raggedbottom
+\titleformat{\section}{\large\sffamily\bfseries\color{Ink}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\normalsize\sffamily\bfseries\color{Ink}}{\thesubsection}{0.6em}{}
+\newtheorem{proposition}{Proposition}[section]
+\newcommand{\RepoURL}{https://github.com/parsabe/Beyond-Normal-Weather}
+\newcommand{\RepoRoot}{\href{\RepoURL}{GitHub repository}}
+\newcommand{\RepoPipeline}{\href{\RepoURL/tree/hydrogen-pipeline}{pipeline code}}
+\newcommand{\RepoBenchmarks}{\href{\RepoURL/tree/hydrogen-benchmarks/reports}{benchmark results}}
+\newcommand{\CRPS}{\operatorname{CRPS}}
+\newcommand{\clip}{\operatorname{clip}}
+\providecommand{\doi}[1]{\href{https://doi.org/#1}{\nolinkurl{#1}}}
+
+\title{\bfseries\color{Ink} Weather Chronology and Green Hydrogen Reliability\\[3pt]
+  \large\normalfont A storage-calibrated downscaling pilot near Syracuse, New York}
+\author{Parsa Besharat\\[-1pt]\normalsize\href{mailto:parsa@parsabe.com}{\texttt{parsa@parsabe.com}}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Wind and solar droughts can interrupt delivery from an off-grid hydrogen plant when low generation persists long enough to empty its storage tank. Climate projections provide daily weather sequences, but local bias correction and chronological post-processing can change the clusters of low production that drive such shortages. This pilot asks whether the dependence model can be calibrated against hydrogen delivery outcomes while holding the corrected monthly wind and solar distributions fixed. Hourly ERA5 reanalysis defines local generation proxies for an illustrative plant near Syracuse, New York. Daily output from three CMIP6 models is corrected using monthly additive quantile delta mapping, then reordered with paired historical rank blocks. The block length and replacement probability are selected using the continuous ranked probability score for annual unmet demand across four tank sizes. The selected three-day blocks reduced mean calibration CRPS from 0.628 to 0.572 percentage points. Climate-model chronology scored better on the eight withheld years at all five tested tank sizes, including the seven-day tank excluded from tuning, where CRPS was 0.477 versus 0.548 percentage points. Timing still mattered for projected shortages. Under SSP2-4.5, paired-day shuffling lowered mean unmet demand from 2.28\% to 1.47\% for a three-day tank. In an external comparison against a published grid cell, storage-calibrated resampling brought the projected increase in flash wind drought frequency closer to the published estimate, while solar changes varied across models. These results support using climate-model order as the reference for this site and explicitly testing how chronology choices affect storage conclusions. Reproduction materials are available in the \RepoRoot, with the \RepoPipeline\ and \RepoBenchmarks.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+An electrolyzer supplied by wind and solar generation can continue serving a delivery contract after generation drops if its tank contains enough hydrogen. The sequence of weather therefore influences reliability through the inventory carried from one day to the next. Two periods with the same daily wind and solar pairs can lead to different shortages when low-generation days are concentrated in one period and separated by opportunities to refill the tank in the other. Persistent and temporally compounding weather conditions have been linked to long episodes of unmet demand in renewable electricity systems, and abrupt renewable drought onset can increase operational difficulties \citep{vandermost2024,lin2026}. Long-term hydrogen studies also show that location-specific wind and solar sequences are relevant to plant design and economics \citep{wu2026}. These findings motivate a local modeling problem. Global climate simulations represent the large-scale climate response, yet their daily resource distributions and weather dependence can differ from a local reanalysis. Correcting each variable's marginal distribution addresses one part of this mismatch. The wind--solar association and the ordering of low-generation days determine how much of that correction carries through to storage and delivery. This paper tests whether selecting a paired rank-block resampling rule on the distribution of plant shortfalls improves generalization across years and tank sizes. All chronology methods receive the same corrected monthly resource values, and all are evaluated through the same idealized plant. This design makes chronology the experimental change. A Syracuse case study compares the proposed rule with climate-model order and a fixed seven-day resampler, then perturbs persistence and wind--solar alignment in separate diagnostics. An external comparison applies published flash-drought thresholds and time windows to test whether conclusions about the weather hazard agree with the nearest published grid cell. Separating the historical test from method selection and reporting both operational skill and external hazard agreement allows either criterion to favor a different method.
+
+\section{Related Work}
+\label{sec:related}
+\paragraph{Marginals and dependence.}
+Quantile mapping adjusts biases in simulated weather distributions. When applied to a changing climate, conventional quantile mapping can modify modeled changes in the upper or lower tail. Quantile delta mapping incorporates the modeled change at each percentile \citep{cannon2015}. This study uses an additive correction for wind speed and downwelling shortwave radiation before a separate conversion to daily generation proxies. \citet{vrac2020} extend rank resampling to account for temporal dependence in multivariate climate bias correction. Their work motivates retaining paired, consecutive reference ranks. The procedure here uses a two-variable block library and chooses block settings through a downstream storage score. The historical test includes both the original model chronology and a fixed resampling rule to separate the value of tuning from the value of resampling itself.
+
+\paragraph{Energy droughts and system operation.}
+\citet{vandermost2024} show how weather and energy-system conditions can compound across time in European electricity systems with hydropower. \citet{lin2026} link abrupt and prolonged wind and solar droughts to electricity dispatch impacts and provide gridded projections of changes in event frequency. These studies support evaluating both the weather sequence and its consequences for the system. The present experiment fixes a hydrogen delivery contract and simulates an explicit tank with carryover. The Lin et al. comparison tests the weather hazard using the authors' published source workbook \citep{lin2026data}. It complements the storage test, which uses a mass-based hydrogen shortfall outcome.
+
+\paragraph{Hydrogen under future climates.}
+\citet{wu2026} estimate future costs and configurations across locations using hourly wind and solar capacity factors derived from eight CMIP6 models. Their optimization includes technology capacities and storage, whereas this study fixes plant and delivery assumptions and tests sensitivity to daily weather chronology. Their capacity-factor series are available from the corresponding author by request. The hourly optimization is therefore a related application, and the Lin et al. workbook supplies the downloadable reference for the numerical comparison reported here.
+
+\input{methodology}
+\input{evaluation}
+
+\section{Future Work}
+\label{sec:future}
+The immediate test is whether storage-oriented calibration transfers across additional sites, model families, and weather periods. Rolling historical splits would provide more test windows, and a leave-one-model-family-out experiment could reveal how sensitive the estimated benefit is to each model's chronology. A nested evaluation would keep the held-out years entirely outside block design and selection. Score differences should be reported across the held-out cases, along with the number of reference drought events and a sensitivity analysis for the baseline windows. A stronger benchmark would acquire the plant-modeling study's hourly series and extend the published flash-drought comparison to matched model runs, locations, power conversions, and compound event definitions.
+
+The candidate resampler could also be conditioned on circulation regimes or on the stage of a low-generation spell. Such a design would allow it to retain simulated persistence when the historical analog library has poor support. Its evaluation should check several quantities together, including wind--solar co-occurrence, low-output spell duration, multi-day energy deficits, and the distribution of annual unmet demand. Operational tests with hourly dispatch, observed generation or plant data, alternative demand schedules, higher-fidelity power curves, hydrogen leakage, and compressor limits would clarify how daily aggregation and the idealized balance affect the storage estimates. Separating the sensitivity to electrolyzer capacity from the sensitivity to tank size would help identify which plant constraints make chronology consequential.
+
+\section{Conclusion}
+The pilot isolates the role of weather chronology in a reproducible climate-to-hydrogen reliability experiment. Reordering fixed monthly wind and solar values changed estimated shortages and, for one model and scenario, changed the smallest tested tank that met the mean delivery target. Storage-calibrated rank resampling fit the calibration period better, while climate-model chronology gave lower CRPS throughout the historical test. The same resampling brought the wind drought projection closer to the external reference cell, and the solar projection remained sensitive to individual models. Together, these findings support reporting chronology as a source of uncertainty and treating the unmodified climate-model order as the operating reference in this pilot.
+
+\section{AI Disclosure}
+OpenAI Codex assisted with pipeline implementation, data acquisition and analysis, figure generation, and preparation of the manuscript. Reported values were taken from the executed Python workflow and its saved outputs. Primary literature and publisher data are cited where they inform the method or supply external comparison values. The \RepoPipeline\ and \RepoBenchmarks\ provide an audit trail for the numerical claims.
+
+\onecolumn
+\bibliographystyle{plainnat}
+\bibliography{references}
+\clearpage
+\appendix
+\pdfbookmark[0]{Appendix}{paper-appendix}
+\section*{Appendix}
+\input{appendix}
+
+\end{document}

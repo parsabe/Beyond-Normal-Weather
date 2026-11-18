@@ -1,0 +1,66 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Study design and historical test}
+The illustrative off-grid plant has 30\,MW of wind capacity, 20\,MW of solar capacity, and a 25\,MW electrolyzer using 52\,kWh per kilogram of hydrogen. The delivery contract is 2{,}700\,kg per day. Tested tank sizes hold 0, 1, 3, 7, or 14 days of contracted demand. This design keeps production, dispatch rules, and demand fixed across scenarios. It excludes grid imports, inventory losses, and intra-day operating constraints.
+
+ERA5 and historical CMIP6 data from 1981--1998 train the marginal maps and supply reference analog blocks. The 1999--2006 period is used to select the block parameters. Evaluation uses 2007--2014, including the seven-day tank excluded from selection. Climate simulations are free-running, so the comparison scores the distribution of annual outcomes against each reference year, with no day-by-day or year-by-year weather pairing. The model's fractional ranks for each evaluation period use only its own simulated resource values for that period. The held-out ERA5 primary data enter through the reference dispatch outcomes used for scoring.
+
+We report the mean CRPS by tank size across the eight ERA5 test years. The number of climate and resampled trajectories describes the forecast distribution. The statistical comparison still has eight reference years. To illustrate sensitivity to that sample, we resample the paired annual score differences with circular two-year blocks over the withheld ERA5 years and use the 2.5th and 97.5th percentiles of 2{,}000 bootstrap averages. These bounds are conditional on the fitted settings and the pooled forecast distributions. They exclude uncertainty from other climate models, plant designs, and sites.
+
+\subsection{Future scenarios and sequence interventions}
+The historical choice of block length and replacement rate is frozen before application to 2041--2060 under SSP2-4.5 and SSP5-8.5. For every model and scenario, the pipeline reports mean and 90th-percentile annual unmet demand, the fraction of years above the shortfall target, the share of shortfall days, and the longest within-year run of unmet delivery. It also records the smallest tested tank for which average unmet demand is at most 1\%. We compare the two sequence interventions against the climate-model order under the same plant and weather inputs. Model spread is reported separately from resampling variability and scenarios are displayed individually.
+
+\subsection{Published flash-drought comparison}
+The weather-hazard comparison uses the Figure~2 source workbook and supplementary methods from \citet{lin2026}. The nearest eligible grid cell to the project site is 43.5$^{\circ}$N, 76.5$^{\circ}$W. We align SSP2-4.5, the historical window of 1985--2014, and the projection window of 2045--2074. In each historical trajectory, we identify complete spells of at least three days below the 10th-percentile capacity factor for each resource. The day-before drop defines onset speed. A flash drought has an onset above the 90th percentile of historical spell onsets. The future frequency is computed using the fixed thresholds from the corresponding historical trajectory. Spells touching either end of the window are excluded from the count.
+
+The relative change is $100(\bar N_{\mathrm{future}}/\bar N_{\mathrm{hist}}-1)$, where $\bar N$ is the mean count per 30-year trajectory within model and method. Results are then averaged equally across models. A zero historical count makes the relative change undefined. The comparison uses the published grid cell as a numerical reference and preserves the separate scope of the hydrogen delivery experiment. The paper's model ensemble, grid resolution, and capacity-factor construction differ from those of this pilot.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Historical pipeline evaluation}
+Calibration selected $f=1$ and $\ell=3$, replacing every eligible block after the randomly chosen start offset. Averaged across the four tuning tank sizes, CRPS was 0.572 percentage points, compared with 0.628 for climate-model order. The next-best grid setting, a 50\% replacement rate with seven-day blocks, scored 0.576 percentage points. The small tuning difference between these two settings leaves room for instability in the selected parameters.
+
+\begin{table}[t]
+\centering\small
+\caption{Mean test CRPS in percentage points for 2007--2014. Lower is better. The dagger marks the tank size withheld from model selection.}
+\label{tab:test}
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+Tank days & Model order & Fixed blocks & Calibrated \\
+\midrule
+0 & \textbf{0.839} & 1.037 & 1.023 \\
+1 & \textbf{0.622} & 1.184 & 1.023 \\
+3 & \textbf{0.619} & 0.919 & 0.819 \\
+7$^{\dagger}$ & \textbf{0.477} & 0.560 & 0.548 \\
+14 & \textbf{0.0245} & 0.0245 & 0.0248 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Climate-model order achieved lower CRPS than storage-calibrated resampling at every tested tank size in 2007--2014 (Table~\ref{tab:test}). For the held-out seven-day tank, calibrated CRPS exceeded the model-order score by 0.071 percentage points. The conditional moving-block bootstrap bounds were $-0.002$ and $+0.150$ percentage points. At 14 days the model-order and fixed-block scores agree to the displayed precision, and the calibrated score was slightly higher. These results favor the climate-model order for this pilot, while the short evaluation window limits broader claims about the relative skill of the methods.
+
+\subsection{Projected delivery and chronology sensitivity}
+Under climate-model order, the three-model mean unmet demand in 2041--2060 for a seven-day tank was 0.55\% under SSP2-4.5 and 0.60\% under SSP5-8.5. Storage-calibrated resampling gave 0.41\% and 0.48\%, respectively. Under the calibrated method, a seven-day tank was the smallest tested capacity meeting the 1\% mean shortfall target for all three models and both scenarios. With climate-model order, ACCESS-CM2 under SSP5-8.5 first met the target at 14 days, while the other model--scenario combinations met it at seven days. These capacities are grid-search results for an illustrative system and a period-average target. Appendix Figure~\ref{fig:hydrogen} shows the historical skill and future storage curves.
+
+For three days of storage under SSP2-4.5, mean unmet demand reached 2.28\% under climate-model order. Paired-day shuffling lowered it to 1.47\%, even though each contemporaneous wind--solar pair was preserved within its month and year. Shifting solar alone raised it to 2.55\%. This pattern shows that the ordering of resource availability can materially affect delivery reliability for this plant. The shift experiment also changes the placement of month boundaries in the solar series, so its difference quantifies the full perturbation.
+
+\subsection{Comparison with published drought data}
+Table~\ref{tab:literature} compares the estimated changes in event frequency with the source grid cell from \citet{lin2026}. For wind, the calibrated estimate of $+16.4$\% is closer to the published value of $+11.8$\% than the model-order estimate of $+38.1$\%. Solar moves from $+63.2$\% with model order to $+9.1$\% with the calibrated method, while the published cell shows $-2.0$\%. Under calibrated resampling, the solar change ranges from $-52.3$\% to $+44.1$\% across the three climate models (Appendix Figure~\ref{fig:external}). Baseline historical counts for flash solar droughts are five to eight per model over 30 years, and small absolute changes can therefore move the relative frequency sharply.
+
+\begin{table}[t]
+\centering\small
+\caption{Relative change in flash-drought frequency under SSP2-4.5. The published column uses the nearest eligible grid cell in the authors' Figure~2 workbook. Pilot columns are means across three climate models.}
+\label{tab:literature}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Resource & Published & Model order & Calibrated \\
+\midrule
+Wind  & $+11.8$\% & $+38.1$\% & $+16.4$\% \\
+Solar & $-2.0$\%  & $+63.2$\% & $+9.1$\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The external comparison evaluates one feature of the daily weather sequence across a different climate model ensemble and point-to-grid representation. It therefore complements the held-out test of annual hydrogen delivery. Agreement on the wind hazard and weaker test performance for storage coexist in this case. The benchmark branch preserves the weather event counts, the reference grid cell, and the input checksums. The \RepoBenchmarks\ contain both test outcomes.

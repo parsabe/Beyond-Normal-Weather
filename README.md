@@ -2,6 +2,8 @@
 
 Can a weather model calibrated against hydrogen delivery shortfalls improve estimates of storage reliability? This repository tests that question with ERA5, three CMIP6 models, and an illustrative wind–solar hydrogen plant near Syracuse, New York. The [original proposal](Project/new%20-%20Topic.pdf) motivates the study. The earlier New York heat experiment is on `master`.
 
+The documentation branch includes the [research paper PDF](paper/main.pdf) and its [LaTeX sources and build instructions](paper/).
+
 ## Run the experiment
 
 Use Python 3.12. The download command uses public endpoints and needs network access. Run subsequent commands offline with the cached inputs.
